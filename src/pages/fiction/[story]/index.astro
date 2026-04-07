@@ -1,0 +1,202 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const stories = await getCollection('fiction');
+  const allChapters = await getCollection('fictionChapters');
+
+  return stories.map((story) => {
+    const chapters = allChapters
+      .filter((c) => c.id.startsWith(`${story.id}/`))
+      .sort((a, b) => a.data.order - b.data.order);
+    return {
+      params: { story: story.id },
+      props: { story, chapters },
+    };
+  });
+}
+
+const { story, chapters } = Astro.props;
+
+function formatDate(d?: string): string {
+  if (!d) return '';
+  const [y, m] = d.split('-');
+  return `${y}.${m}`;
+}
+---
+
+<BaseLayout title={`${story.data.title} — ink`}>
+  <article class="paper reading-paper">
+    <a href={`/#fiction/${story.id}`} class="back-link">&lsaquo; Cover</a>
+
+    <header class="reading-header">
+      <h1 class="reading-title">{story.data.title}</h1>
+      {story.data.enTitle && (
+        <p class="reading-en-title">{story.data.enTitle}</p>
+      )}
+    </header>
+
+    {(story.data.quoteLine1 || story.data.quoteLine2) && (
+      <blockquote class="story-quote">
+        {story.data.quoteLine1 && <p class="q-line">{story.data.quoteLine1}</p>}
+        {story.data.quoteLine2 && <p class="q-line">{story.data.quoteLine2}</p>}
+        {story.data.quoteSource && <p class="q-source">{story.data.quoteSource}</p>}
+      </blockquote>
+    )}
+
+    <nav class="chapter-list">
+      <h2 class="chapter-list-heading">Contents</h2>
+      <ul>
+        {chapters.map((ch) => {
+          const chNum = ch.id.split('/').pop();
+          return (
+            <li>
+              <a href={`/fiction/${story.id}/${chNum}/`}>{ch.data.title}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+
+    {story.data.date && (
+      <div class="reading-date">{formatDate(story.data.date)}</div>
+    )}
+  </article>
+</BaseLayout>
+
+<style>
+  .reading-paper {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .back-link {
+    display: inline-block;
+    align-self: flex-start;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--color-ink-light);
+    border-bottom: none;
+    letter-spacing: 0.08em;
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--color-ink);
+  }
+
+  .reading-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .reading-title {
+    font-family: var(--font-zh);
+    font-size: 1.5rem;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+  }
+
+  .reading-en-title {
+    margin-top: 8px;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--color-ink-light);
+    letter-spacing: 0.08em;
+  }
+
+  .story-quote {
+    text-align: center;
+    margin: 0 auto 56px;
+    max-width: 390px;
+    padding: 28px 0;
+    color: var(--color-ink);
+  }
+
+  .story-quote::before,
+  .story-quote::after {
+    content: '';
+    display: block;
+    width: 180px;
+    height: 1px;
+    margin: 0 auto;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-ink-faint) 20%,
+      var(--color-ink-faint) 80%,
+      transparent
+    );
+  }
+
+  .story-quote::before {
+    margin-bottom: 28px;
+  }
+
+  .story-quote::after {
+    margin-top: 28px;
+  }
+
+  .story-quote .q-line {
+    margin: 0;
+    font-family: var(--font-zh);
+    font-size: 0.95rem;
+    line-height: 1.9;
+    letter-spacing: 0.08em;
+  }
+
+  .story-quote .q-source {
+    margin-top: 14px;
+    font-family: var(--font-zh);
+    font-size: 0.8rem;
+    color: var(--color-ink);
+    letter-spacing: 0.1em;
+  }
+
+  .chapter-list {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .chapter-list-heading {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    font-weight: normal;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-ink-light);
+    margin-bottom: 20px;
+  }
+
+  .chapter-list ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .chapter-list li {
+    margin-bottom: 10px;
+    font-family: var(--font-zh);
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+  }
+
+  .chapter-list li:last-child {
+    margin-bottom: 0;
+  }
+
+  .chapter-list a {
+    color: var(--color-ink);
+  }
+
+  .reading-date {
+    margin-top: auto;
+    padding-top: 75px;
+    text-align: right;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--color-ink-light);
+  }
+</style>

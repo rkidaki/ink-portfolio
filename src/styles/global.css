@@ -1,0 +1,328 @@
+/* === Fonts === */
+@font-face {
+  font-family: 'Xiangcui';
+  src: url('/fonts/xiangcui-w15.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Kingthings Trypewriter';
+  src: url('/fonts/kingthings-trypewriter-2.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* === Reset === */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* === Base === */
+:root {
+  --color-bg: #1f1f21;
+  --color-paper: #efe7da;
+  --color-paper-shadow: rgba(0, 0, 0, 0.3);
+  /* Three ink levels used on the paper card:
+     - ink:       darkest, main text and titles
+     - ink-light: medium, everything else (subtitles, dates, captions, quotes)
+     - ink-faint: faintest, horizontal lines and link underlines only */
+  --color-ink: #2c2c2c;
+  --color-ink-light: #6b6560;
+  --color-ink-faint: #9e9790;
+
+  --font-zh: 'Xiangcui', 'Source Han Serif SC', 'Noto Serif SC', serif;
+  --font-en: 'Kingthings Trypewriter', 'Courier New', monospace;
+
+  --paper-max-width: 900px;
+  --paper-padding: 60px 72px;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-zh);
+  line-height: 1.8;
+  min-height: 100vh;
+  padding: 40px 0;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* === Reading page: scale-to-fit via CSS zoom ===
+   Unlike the homepage's transform-based canvas (which uses fixed dimensions),
+   reading pages have variable/scrollable content. `zoom` affects layout size,
+   so scrolling works naturally while everything scales proportionally.
+   Reference width 1470px matches the homepage canvas. */
+.reading-zoom {
+  width: 100%;
+  zoom: min(1, calc((100vw - 80px) / 900px));
+}
+
+body.reading-body {
+  padding: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.reading-body::before {
+  content: '';
+  flex: 1 0 40px;
+  min-height: 40px;
+}
+
+body.reading-body::after {
+  content: '';
+  flex: 1 0 0px;
+}
+
+
+/* === Homepage layout ===
+   Paper scales based on BOTH viewport width and height. When the viewport is
+   taller than the content, the whole block (paper + footer) centres vertically.
+   ::before/::after flex spacers guarantee at least 40px dark on top and bottom. */
+body.home-body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.home-body::before {
+  content: '';
+  flex: 1 0 40px;
+  min-height: 40px;
+}
+
+body.home-body::after {
+  content: '';
+  flex: 1 0 0px;
+}
+
+body.home-body .paper {
+  width: var(--paper-max-width);
+  zoom: min(1.5, calc((100vw - 80px) / 900px), calc((100vh - 196px) / 500px));
+}
+
+/* === Paper Card === */
+.paper {
+  background-color: var(--color-paper);
+  max-width: var(--paper-max-width);
+  margin: 0 auto;
+  padding: var(--paper-padding);
+  box-shadow:
+    0 1px 3px var(--color-paper-shadow),
+    0 0 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+/* paper texture overlay */
+.paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/paper-texture.jpg');
+  background-size: 512px 512px;
+  background-repeat: repeat;
+  opacity: 0.9;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* === Typography === */
+h1, h2, h3 {
+  font-family: var(--font-en);
+  font-weight: normal;
+  letter-spacing: 0.05em;
+}
+
+a {
+  color: var(--color-ink);
+  text-decoration: none;
+  /* Underline appears on hover with fading ends, matching the divider style */
+  background-image: none;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  padding-bottom: 2px;
+  transition: background-image 0.2s;
+}
+
+a:hover {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    var(--color-ink-faint) 20%,
+    var(--color-ink-faint) 80%,
+    transparent
+  );
+}
+
+/* === Dark footer area === */
+.site-footer {
+  max-width: var(--paper-max-width);
+  margin: 0 auto;
+  padding: 72px 72px;
+  color: var(--color-ink-light);
+  font-family: var(--font-en);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: default;
+  user-select: none;
+}
+
+/* ===================================================================
+   MOBILE — < 768px
+   Disable zoom. All pages use flex centering (short content centres,
+   long content scrolls). Unified logic for homepage + reading pages.
+   =================================================================== */
+@media (max-width: 767px) {
+  /* --- Mobile: block layout, JS handles centering --- */
+  body.home-body,
+  body.reading-body {
+    display: block !important;
+    overflow-x: hidden;
+  }
+
+  body.home-body { padding: 0 20px; }
+  body.reading-body { padding: 40px 20px 0; }
+
+  body.home-body::before, body.home-body::after,
+  body.reading-body::before, body.reading-body::after {
+    display: none !important;
+  }
+
+  /* --- Disable zoom --- */
+  body.home-body .paper { zoom: 1; width: 100%; }
+  .reading-zoom { zoom: 1; width: 100%; }
+
+  /* --- Paper: full width, padding 30px sides --- */
+  .paper {
+    max-width: none;
+    margin: 0;
+    padding: 40px 30px;
+  }
+
+  /* --- Footer --- */
+  .site-footer {
+    max-width: none;
+    margin: 0;
+    padding: 56px 30px;
+    width: 100%;
+  }
+
+  /* --- Homepage: arc right, picker centred --- */
+  .home-quote {
+    align-self: flex-end !important;
+    font-size: 0.9rem;
+  }
+
+  .home-paper { gap: 32px; }
+
+  .l1 { padding-left: 0 !important; }
+  .l2 { padding-left: 5ch !important; }
+  .l3 { padding-left: 10ch !important; }
+  .l4 { padding-left: 13ch !important; }
+  .l5 { padding-left: 14ch !important; }
+  .l6 { padding-left: 12ch !important; }
+  .l7 { padding-left: 8ch !important; }
+  .l8 { padding-left: 4ch !important; }
+
+  .picker {
+    align-self: stretch !important;
+    width: 100% !important;
+    gap: 48px !important;
+  }
+
+  [data-picker-col="category"] {
+    flex: 0 0 80px !important;
+    min-width: 0 !important;
+  }
+
+  [data-picker-col="title"] {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .picker-item,
+  [data-picker-col="title"] .picker-item {
+    font-size: 0.9rem !important;
+    display: flex !important;
+  }
+
+  /* --- Typography --- */
+  h1 { font-size: 1.3rem; }
+  .reading-body { font-size: 0.9rem; line-height: 1.6; }
+  .story-quote { max-width: 280px; }
+  .story-quote .q-line, .chapter-list li { font-size: 0.9rem; }
+
+  .back-link, .reading-en-title, .reading-date,
+  .chapter-nav, .chapter-list-heading,
+  .story-quote .q-source {
+    font-size: 0.75rem;
+  }
+
+  .site-footer { font-size: 0.7rem; }
+}
+
+/* === SMALL PHONE — < 400px === */
+@media (max-width: 399px) {
+  body.home-body { padding: 0 15px; }
+  body.reading-body { padding: 0 15px; }
+
+  .paper { padding: 32px 24px; }
+  .site-footer { padding: 48px 24px; }
+
+  h1 { font-size: 1.2rem; }
+  .reading-body { font-size: 0.85rem; line-height: 1.55; }
+  .story-quote { max-width: 240px; }
+
+  .home-quote, .picker-item,
+  [data-picker-col="title"] .picker-item,
+  .story-quote .q-line, .chapter-list li {
+    font-size: 0.85rem !important;
+  }
+
+  .back-link, .reading-en-title, .reading-date,
+  .chapter-nav, .chapter-list-heading,
+  .story-quote .q-source {
+    font-size: 0.7rem;
+  }
+
+  .home-paper { gap: 24px; }
+
+  .l1 { padding-left: 0 !important; }
+  .l2 { padding-left: 3ch !important; }
+  .l3 { padding-left: 6ch !important; }
+  .l4 { padding-left: 8ch !important; }
+  .l5 { padding-left: 9ch !important; }
+  .l6 { padding-left: 7ch !important; }
+  .l7 { padding-left: 5ch !important; }
+  .l8 { padding-left: 2ch !important; }
+
+  .picker { gap: 36px !important; }
+  [data-picker-col="category"] { flex: 0 0 80px !important; min-width: 0 !important; }
+  [data-picker-col="title"] { flex: 1 !important; min-width: 0 !important; }
+  .site-footer { font-size: 0.65rem; }
+}

@@ -1,0 +1,320 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const poetry = await getCollection('poetry');
+const fiction = await getCollection('fiction');
+
+const categories = [
+  { key: 'poetry', label: 'Poetry', items: poetry },
+  { key: 'fiction', label: 'Fiction', items: fiction },
+];
+---
+
+<BaseLayout title="ink" homepage={true}>
+  <main class="paper home-paper">
+    <!-- Quote -->
+    <blockquote class="home-quote">
+      <span class="q-line l1"><span class="q-mark">/</span> We write</span>
+      <span class="q-line l2">to taste life twice,</span>
+      <span class="q-line l3">in the</span>
+      <span class="q-line l4">moment</span>
+      <span class="q-line l5">and</span>
+      <span class="q-line l6">in</span>
+      <span class="q-line l7">retrospect.</span>
+      <span class="q-line l8"><span class="q-mark">/</span></span>
+    </blockquote>
+
+    <!-- Picker -->
+    <div class="picker" data-picker-root>
+      <div class="picker-col" data-picker-col="category">
+        <div class="picker-track">
+          {categories.map((cat, i) => (
+            <div class="picker-item" data-index={i}>{cat.label}</div>
+          ))}
+        </div>
+      </div>
+
+      <div class="picker-col" data-picker-col="title">
+        {categories.map((cat, i) => (
+          <div class="picker-track" data-category-index={i}>
+            {cat.items.map((item, j) => (
+              <a href={`/${cat.key}/${item.id}/`} class="picker-item" data-index={j} data-id={item.id}>
+                {item.data.title}
+              </a>
+            ))}
+            {cat.items.length === 0 && (
+              <div class="picker-item picker-empty" data-index="0">...</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .home-paper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 48px;
+  }
+
+  /* Quote */
+  .home-quote {
+    font-family: var(--font-en);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: flex-end;
+    text-align: left;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+    color: var(--color-ink);
+  }
+
+  .q-line {
+    display: block;
+  }
+
+  /* cascading arc with organic unevenness */
+  .l1 { padding-left: 0; }
+  .l2 { padding-left: 10ch; }
+  .l3 { padding-left: 22ch; }
+  .l4 { padding-left: 26ch; }
+  .l5 { padding-left: 28ch; }
+  .l6 { padding-left: 25ch; }
+  .l7 { padding-left: 19ch; }
+  .l8 { padding-left: 12ch; }
+
+  .q-mark {
+    display: inline-block;
+  }
+
+  /* Picker */
+  .picker {
+    display: flex;
+    gap: 35px;
+    align-self: flex-start;
+  }
+
+  .picker-col {
+    --item-height: 2.1rem;
+    height: calc(var(--item-height) * 3);
+    overflow: hidden;
+    position: relative;
+    min-width: 140px;
+  }
+
+  .picker-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(calc(-1 * var(--item-height) / 2));
+    transition: transform 0.3s ease;
+  }
+
+  /* Only the currently-active track in the title column is visible */
+  [data-picker-col="title"] .picker-track {
+    opacity: 0;
+    pointer-events: none;
+  }
+  [data-picker-col="title"] .picker-track.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .picker-item {
+    height: var(--item-height);
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    font-family: var(--font-en);
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-light);
+    opacity: 0.5;
+    transition: opacity 0.3s ease, color 0.3s ease;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Chinese titles use the Chinese font */
+  [data-picker-col="title"] .picker-item {
+    font-family: var(--font-zh);
+    font-size: 1.05rem;
+    letter-spacing: 0.05em;
+  }
+
+  .picker-item.selected {
+    opacity: 1;
+    color: var(--color-ink);
+  }
+
+  .picker-empty {
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  type PickerState = {
+    category: number;
+    titles: number[]; // one index per category
+  };
+
+  function initPicker() {
+    const root = document.querySelector('[data-picker-root]') as HTMLElement;
+    if (!root) return;
+
+    const categoryCol = root.querySelector('[data-picker-col="category"]') as HTMLElement;
+    const titleCol = root.querySelector('[data-picker-col="title"]') as HTMLElement;
+    const categoryTrack = categoryCol.querySelector('.picker-track') as HTMLElement;
+    const categoryItems = Array.from(categoryTrack.querySelectorAll('.picker-item')) as HTMLElement[];
+    const titleTracks = Array.from(titleCol.querySelectorAll('.picker-track')) as HTMLElement[];
+
+    const state: PickerState = {
+      category: 0,
+      titles: titleTracks.map(() => 0),
+    };
+
+    const ITEM_HEIGHT = parseFloat(getComputedStyle(categoryCol).getPropertyValue('--item-height')) * 16 || 38.4;
+
+    function renderCategory() {
+      categoryItems.forEach((item, i) => {
+        item.classList.toggle('selected', i === state.category);
+      });
+      categoryTrack.style.transform = `translateY(calc(-1 * var(--item-height) / 2 - ${state.category} * var(--item-height)))`;
+
+      titleTracks.forEach((track, i) => {
+        track.classList.toggle('active', i === state.category);
+      });
+      renderTitles();
+    }
+
+    function renderTitles() {
+      const activeTrack = titleTracks[state.category];
+      const items = Array.from(activeTrack.querySelectorAll('.picker-item')) as HTMLElement[];
+      const idx = state.titles[state.category];
+      items.forEach((item, i) => {
+        item.classList.toggle('selected', i === idx);
+      });
+      activeTrack.style.transform = `translateY(calc(-1 * var(--item-height) / 2 - ${idx} * var(--item-height)))`;
+    }
+
+    let scrollLock = false;
+    function lockScroll() {
+      scrollLock = true;
+      setTimeout(() => { scrollLock = false; }, 350);
+    }
+
+    categoryCol.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (scrollLock) return;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const next = state.category + dir;
+      if (next >= 0 && next < categoryItems.length) {
+        state.category = next;
+        renderCategory();
+        lockScroll();
+      }
+    }, { passive: false });
+
+    titleCol.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (scrollLock) return;
+      const activeTrack = titleTracks[state.category];
+      const items = activeTrack.querySelectorAll('.picker-item');
+      if (items.length <= 1) return;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const next = state.titles[state.category] + dir;
+      if (next >= 0 && next < items.length) {
+        state.titles[state.category] = next;
+        renderTitles();
+        lockScroll();
+      }
+    }, { passive: false });
+
+    // Click to select
+    categoryItems.forEach((item, i) => {
+      item.addEventListener('click', () => {
+        state.category = i;
+        renderCategory();
+      });
+    });
+
+    // Touch swipe on entire picker area (A: touchmove for instant response, B: wider area)
+    let touchStartY = 0;
+    let touchSwiped = false;
+
+    root.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      touchSwiped = false;
+    }, { passive: true });
+
+    root.addEventListener('touchmove', (e) => {
+      if (touchSwiped) return;
+      const diff = touchStartY - e.touches[0].clientY;
+      if (Math.abs(diff) > 5) {
+        touchSwiped = true;
+        const dir = diff > 0 ? 1 : -1;
+
+        // Determine which column the touch started on
+        const touchX = e.touches[0].clientX;
+        const catRect = categoryCol.getBoundingClientRect();
+        const titleRect = titleCol.getBoundingClientRect();
+
+        if (touchX < titleRect.left) {
+          // Category side
+          const next = state.category + dir;
+          if (next >= 0 && next < categoryItems.length) {
+            state.category = next;
+            renderCategory();
+          }
+        } else {
+          // Title side
+          const activeTrack = titleTracks[state.category];
+          const items = activeTrack.querySelectorAll('.picker-item');
+          if (items.length <= 1) return;
+          const next = state.titles[state.category] + dir;
+          if (next >= 0 && next < items.length) {
+            state.titles[state.category] = next;
+            renderTitles();
+          }
+        }
+
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    // Read URL hash to restore picker state (e.g. /#fiction/romance-as-enlightenment)
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const [cat, itemId] = hash.split('/');
+      const catNames = ['poetry', 'fiction'];
+      const catIndex = catNames.indexOf(cat);
+      if (catIndex >= 0) {
+        state.category = catIndex;
+        if (itemId) {
+          const track = titleTracks[catIndex];
+          const items = Array.from(track.querySelectorAll('.picker-item')) as HTMLElement[];
+          items.forEach((el, i) => {
+            if (el.dataset.id === itemId) {
+              state.titles[catIndex] = i;
+            }
+          });
+        }
+      }
+      // Clean up hash from URL without triggering scroll
+      history.replaceState(null, '', window.location.pathname);
+    }
+
+    renderCategory();
+  }
+
+  initPicker();
+  document.addEventListener('astro:page-load', initPicker);
+</script>

@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const poems = await getCollection('poetry');
+  return poems.map((poem) => ({
+    params: { id: poem.id },
+    props: { poem },
+  }));
+}
+
+const { poem } = Astro.props;
+const { Content } = await render(poem);
+
+// Format date like "2025.01" for typewriter feel
+function formatDate(d?: string): string {
+  if (!d) return '';
+  const [y, m] = d.split('-');
+  return `${y}.${m}`;
+}
+---
+
+<BaseLayout title={`${poem.data.title} — ink`}>
+  <article class="paper reading-paper">
+    <a href={`/#poetry/${poem.id}`} class="back-link">&lsaquo; Cover</a>
+
+    <header class="reading-header">
+      <h1 class="reading-title">{poem.data.title}</h1>
+      {poem.data.enTitle && (
+        <p class="reading-en-title">{poem.data.enTitle}</p>
+      )}
+    </header>
+
+    <div class="reading-body poetry-body">
+      <Content />
+    </div>
+
+    {poem.data.date && (
+      <div class="reading-date">{formatDate(poem.data.date)}</div>
+    )}
+  </article>
+</BaseLayout>
+
+<style>
+  .reading-paper {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .back-link {
+    display: inline-block;
+    align-self: flex-start;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--color-ink-light);
+    border-bottom: none;
+    letter-spacing: 0.08em;
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--color-ink);
+  }
+
+  .reading-date {
+    margin-top: auto;
+    padding-top: 75px;
+    text-align: right;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--color-ink-light);
+  }
+
+  .reading-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .reading-title {
+    font-family: var(--font-zh);
+    font-size: 1.5rem;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+  }
+
+  .reading-en-title {
+    margin-top: 8px;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--color-ink-light);
+    letter-spacing: 0.08em;
+  }
+
+  .reading-body {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .poetry-body :global(p) {
+    margin-bottom: 1.5em;
+    text-align: left;
+  }
+
+  .poetry-body :global(p:last-of-type) {
+    margin-bottom: 0;
+  }
+</style>

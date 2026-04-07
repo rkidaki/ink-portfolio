@@ -1,0 +1,145 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const stories = await getCollection('fiction');
+  const allChapters = await getCollection('fictionChapters');
+
+  const paths = [];
+  for (const story of stories) {
+    const chapters = allChapters
+      .filter((c) => c.id.startsWith(`${story.id}/`))
+      .sort((a, b) => a.data.order - b.data.order);
+
+    chapters.forEach((chapter, i) => {
+      const chapterSlug = chapter.id.split('/').pop();
+      paths.push({
+        params: { story: story.id, chapter: chapterSlug },
+        props: {
+          story,
+          chapter,
+          prev: chapters[i - 1] || null,
+          next: chapters[i + 1] || null,
+        },
+      });
+    });
+  }
+
+  return paths;
+}
+
+const { story, chapter, prev, next } = Astro.props;
+const { Content } = await render(chapter);
+
+const prevSlug = prev ? prev.id.split('/').pop() : null;
+const nextSlug = next ? next.id.split('/').pop() : null;
+---
+
+<BaseLayout title={`${chapter.data.title} — ${story.data.title} — ink`}>
+  <article class="paper reading-paper">
+    <a href={`/fiction/${story.id}/`} class="back-link">&lsaquo; Contents</a>
+
+    <header class="reading-header">
+      <h1 class="reading-title">{chapter.data.title}</h1>
+      {chapter.data.enTitle && (
+        <p class="reading-en-title">{chapter.data.enTitle}</p>
+      )}
+    </header>
+
+    <div class="reading-body fiction-body">
+      <Content />
+    </div>
+
+    <nav class="chapter-nav">
+      {prev ? (
+        <a href={`/fiction/${story.id}/${prevSlug}/`} class="nav-prev">
+          &lsaquo; Previous
+        </a>
+      ) : <span></span>}
+      {next ? (
+        <a href={`/fiction/${story.id}/${nextSlug}/`} class="nav-next">
+          Next &rsaquo;
+        </a>
+      ) : <span></span>}
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .reading-paper {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .back-link {
+    display: inline-block;
+    align-self: flex-start;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--color-ink-light);
+    border-bottom: none;
+    letter-spacing: 0.08em;
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--color-ink);
+  }
+
+  .reading-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .reading-title {
+    font-family: var(--font-zh);
+    font-size: 1.5rem;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+  }
+
+  .reading-en-title {
+    margin-top: 8px;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--color-ink-light);
+    letter-spacing: 0.08em;
+  }
+
+  .reading-body {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .fiction-body :global(p) {
+    margin-bottom: 1em;
+  }
+
+  .fiction-body :global(p.center) {
+    text-indent: 0;
+    text-align: center;
+  }
+
+  .chapter-nav {
+    margin-top: 60px;
+    padding-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-light);
+  }
+
+  .chapter-nav a {
+    color: var(--color-ink-light);
+    border-bottom: none;
+  }
+
+  .chapter-nav a:hover {
+    color: var(--color-ink);
+  }
+</style>

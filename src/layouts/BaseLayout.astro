@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  title?: string;
+  homepage?: boolean;
+}
+
+const { title = 'ink', homepage = false } = Astro.props;
+
+// Count total words: Chinese characters + English words
+const poetry = await getCollection('poetry');
+const fiction = await getCollection('fiction');
+const fictionChapters = await getCollection('fictionChapters');
+
+function countText(text: string): number {
+  // Strip markdown headings, emphasis, links, etc.
+  const clean = text
+    .replace(/^---[\s\S]*?---/m, '')           // remove frontmatter
+    .replace(/#+\s/g, '')                       // remove heading markers
+    .replace(/\*+/g, '')                        // remove emphasis markers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')    // keep link text only
+    .replace(/`[^`]*`/g, '');                   // remove inline code
+
+  // Count Chinese characters (CJK unified ideographs)
+  const chinese = (clean.match(/[\u4e00-\u9fff]/g) || []).length;
+  // Count English words (sequences of letters)
+  const english = (clean.match(/[a-zA-Z]+/g) || []).length;
+  return chinese + english;
+}
+
+// Poetry entries contain their own content; fiction stories are split across
+// _meta.md (metadata only) and ch-*.md (actual chapter content), so we count
+// the chapter collection for story word counts.
+const totalWords = [...poetry, ...fictionChapters].reduce((sum, entry) => {
+  return sum + countText(entry.body || '');
+}, 0);
+
+const totalWorks = poetry.length + fiction.length;
+---
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&display=swap" />
+    <title>{title}</title>
+  </head>
+  <body class:list={[{ 'home-body': homepage, 'reading-body': !homepage }]}>
+    {homepage ? (
+      <>
+        <slot />
+        <footer class="site-footer">
+          <span>WORDS:{totalWords.toLocaleString()}&nbsp;&nbsp;&nbsp;WORKS:{totalWorks}&nbsp;&nbsp;&nbsp;SEAGULL2U</span>
+        </footer>
+      </>
+    ) : (
+      <div class="reading-zoom">
+        <slot />
+        <footer class="site-footer">
+          <span>WORDS:{totalWords.toLocaleString()}&nbsp;&nbsp;&nbsp;WORKS:{totalWorks}&nbsp;&nbsp;&nbsp;SEAGULL2U</span>
+        </footer>
+      </div>
+    )}
+
+    <script is:inline>
+      // Block right-click context menu and text selection across the site
+      document.addEventListener('contextmenu', (e) => e.preventDefault());
+      document.addEventListener('selectstart', (e) => e.preventDefault());
+      document.addEventListener('dragstart', (e) => e.preventDefault());
+      document.addEventListener('copy', (e) => e.preventDefault());
+
+      // Mobile vertical centering via JS (CSS solutions are unreliable
+      // across mobile browsers due to toolbar/safe-area differences).
+      function centerContent() {
+        if (window.innerWidth >= 768) return; // desktop uses CSS
+        const paper = document.querySelector('.paper');
+        const footer = document.querySelector('.site-footer');
+        if (!paper || !footer) return;
+
+        paper.style.marginTop = '0';
+        const vh = window.innerHeight;
+        const bodyPadTop = parseInt(getComputedStyle(document.body).paddingTop) || 0;
+        const contentH = paper.offsetHeight + footer.offsetHeight + bodyPadTop;
+        const isHome = document.body.classList.contains('home-body');
+
+        if (isHome) {
+          document.body.style.height = vh + 'px';
+          document.body.style.overflow = 'hidden';
+        }
+
+        if (contentH < vh) {
+          const topMargin = Math.max(0, (vh - contentH) / 2);
+          paper.style.marginTop = topMargin + 'px';
+        }
+      }
+      centerContent();
+      window.addEventListener('resize', centerContent);
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>
