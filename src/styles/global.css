@@ -158,23 +158,6 @@ h1, h2, h3 {
 a {
   color: var(--color-ink);
   text-decoration: none;
-  /* Underline appears on hover with fading ends, matching the divider style */
-  background-image: none;
-  background-position: 0 100%;
-  background-size: 100% 1px;
-  background-repeat: no-repeat;
-  padding-bottom: 2px;
-  transition: background-image 0.2s;
-}
-
-a:hover {
-  background-image: linear-gradient(
-    to right,
-    transparent,
-    var(--color-ink-faint) 20%,
-    var(--color-ink-faint) 80%,
-    transparent
-  );
 }
 
 /* === Dark footer area === */

@@ -7,6 +7,7 @@ const poetry = defineCollection({
     title: z.string(),
     enTitle: z.string().optional(),
     date: z.string().optional(),
+    lang: z.enum(['zh', 'en']).default('zh'),
   }),
 });
 

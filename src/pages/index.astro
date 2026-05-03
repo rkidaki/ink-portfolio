@@ -39,7 +39,7 @@ const categories = [
         {categories.map((cat, i) => (
           <div class="picker-track" data-category-index={i}>
             {cat.items.map((item, j) => (
-              <a href={`/${cat.key}/${item.id}/`} class="picker-item" data-index={j} data-id={item.id}>
+              <a href={`/${cat.key}/${item.id}/`} class="picker-item" data-index={j} data-id={item.id} data-lang={item.data.lang || 'zh'}>
                 {item.data.title}
               </a>
             ))}
@@ -143,11 +143,15 @@ const categories = [
     cursor: pointer;
   }
 
-  /* Chinese titles use the Chinese font */
   [data-picker-col="title"] .picker-item {
     font-family: var(--font-zh);
     font-size: 1.05rem;
     letter-spacing: 0.05em;
+  }
+
+  [data-picker-col="title"] .picker-item[data-lang="en"] {
+    font-family: var(--font-en);
+    letter-spacing: 0.08em;
   }
 
   .picker-item.selected {
@@ -243,6 +247,20 @@ const categories = [
       item.addEventListener('click', () => {
         state.category = i;
         renderCategory();
+      });
+    });
+
+    // Title click: first click selects, second click navigates
+    titleTracks.forEach((track, catIdx) => {
+      const items = Array.from(track.querySelectorAll('.picker-item')) as HTMLElement[];
+      items.forEach((item, itemIdx) => {
+        item.addEventListener('click', (e) => {
+          if (state.titles[catIdx] !== itemIdx) {
+            e.preventDefault();
+            state.titles[catIdx] = itemIdx;
+            renderTitles();
+          }
+        });
       });
     });
 

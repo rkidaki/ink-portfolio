@@ -13,16 +13,16 @@ export async function getStaticPaths() {
 const { poem } = Astro.props;
 const { Content } = await render(poem);
 
-// Format date like "2025.01" for typewriter feel
 function formatDate(d?: string): string {
   if (!d) return '';
+  if (!/^\d{4}-\d{2}/.test(d)) return d;
   const [y, m] = d.split('-');
   return `${y}.${m}`;
 }
 ---
 
 <BaseLayout title={`${poem.data.title} — ink`}>
-  <article class="paper reading-paper">
+  <article class="paper reading-paper" data-lang={poem.data.lang}>
     <a href={`/#poetry/${poem.id}`} class="back-link">&lsaquo; Cover</a>
 
     <header class="reading-header">
@@ -99,6 +99,19 @@ function formatDate(d?: string): string {
     line-height: 1.7;
   }
 
+  .poetry-body :global(h3) {
+    font-family: var(--font-en);
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+    margin-top: 2.5em;
+    margin-bottom: 1.2em;
+    color: var(--color-ink);
+  }
+
+  .poetry-body :global(h3:first-child) {
+    margin-top: 0;
+  }
+
   .poetry-body :global(p) {
     margin-bottom: 1.5em;
     text-align: left;
@@ -106,5 +119,13 @@ function formatDate(d?: string): string {
 
   .poetry-body :global(p:last-of-type) {
     margin-bottom: 0;
+  }
+
+  .reading-paper[data-lang="en"] .reading-title {
+    font-family: var(--font-en);
+  }
+
+  .reading-paper[data-lang="en"] .reading-body {
+    font-family: var(--font-en);
   }
 </style>
